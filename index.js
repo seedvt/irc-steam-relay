@@ -84,17 +84,17 @@ module.exports = function(details) {
     sendMessage(by + ' has kicked ' + nick + ' from ' + details.channel + ' (' + reason + ')');
   });
   
-  irc.on('join' + details.channel, function(nick) {
-    sendMessage(nick + ' has joined ' + details.channel);
-  });
+//  irc.on('join' + details.channel, function(nick) {
+//    sendMessage(nick + ' has joined ' + details.channel);
+//  });
   
-  irc.on('part' + details.channel, function(nick) {
-    sendMessage(nick + ' has left ' + details.channel);
-  });
+//  irc.on('part' + details.channel, function(nick) {
+//    sendMessage(nick + ' has left ' + details.channel);
+//  });
   
-  irc.on('quit', function(nick, reason) {
-    sendMessage(nick + ' has quit (' + reason + ')');
-  });
+//  irc.on('quit', function(nick, reason) {
+//    sendMessage(nick + ' has quit (' + reason + ')');
+//  });
   
   var steam = new Steam.SteamClient();
   steam.logOn({
@@ -132,23 +132,86 @@ module.exports = function(details) {
     
     if (parts[0] == '.k' && permissions & Steam.EChatPermission.Kick) {
       irc.send('KICK', details.channel, parts[1], 'requested by ' + name);
-      
-    } else if (parts[0] == '.kb' && permissions & Steam.EChatPermission.Ban) {
-      irc.send('MODE', details.channel, '+b', parts[1]);
+    } 
+	
+	else if (parts[0] == '.kb' && permissions & Steam.EChatPermission.Ban) {
+    irc.send('MODE', details.channel, '+b', parts[1]);
       irc.send('KICK', details.channel, parts[1], 'requested by ' + name);
       
-    } else if (parts[0] == '.unban' && permissions & Steam.EChatPermission.Ban) {
+    } 
+	else if (parts[0] == '.unban' && permissions & Steam.EChatPermission.Ban) {
       irc.send('MODE', details.channel, '-b', parts[1]);
       
-    } else if (parts[0] == '.userlist') {
+    } 
+	else if (parts[0] == '.userlist') {
       irc.send('NAMES', details.channel);
+	  
       irc.once('names' + details.channel, function(nicks) {
         steam.sendMessage(chatter, 'Users in ' + details.channel + ':\n' + Object.keys(nicks).map(function(key) {
           return nicks[key] + key;
         }).join('\n'));
-      });
+      });	  
+  } 
+  else if(parts[0] == '.camel') {
+	  steam.sendMessage(chatRoom, 'Camel is a spic');
+  }
+  
+  else if(parts[0] == '.yallah') {
+	  steam.sendMessage(chatRoom, 'YALLAH HABIBI');
+  }
+  
+  else if(parts[0] == '.dice') {
+      var randomnumber=Math.floor(Math.random()*5)+1;
+	  steam.sendMessage(chatRoom, 'Nigga you rolled a '+randomnumber);
+  
+  }
+  
+  else if(parts[0] == '.dongers') {
+	  steam.sendMessage(chatRoom, 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ');
+  }
+  
+  else if(parts[0] == '.weather') {
+	var request = require('request');
+	
+	if(parts[1] == '' || parts[1] == null) {
+		steam.sendMessage(chatRoom, "Invalid city/country specified!");
+		return
+	}
+	var city = parts[1];
+	
+	var options = {
+    url: 'http://api.openweathermap.org/data/2.5/weather?q=' + city,
+    headers: {
+        'User-Agent': 'request'
     }
-  });
+	};
+
+	function callback(error, response, body) {
+    if (!error && response.statusCode == 200) {
+        var info = JSON.parse(body);
+		var name = info.name;
+		var country = info.sys.country;
+		var temp = Number(info.main.temp) - 273.15;
+		var temp_f = temp.toFixed(1) + "C";
+		var rhumidity = info.main.humidity + "%";
+		var pressure = info.main.pressure + "hPa";
+		var condition = info.weather[0].description;
+    
+		var out = "Weather for "+name+", "+country+"\r\n" + "Temperature: " + temp_f+"\r\n" + condition + "\r\n" + "Rel. Humidity: "+rhumidity;
+		steam.sendMessage(chatRoom, out);
+	}
+}
+
+	request(options, callback);
+	
+
+	
+}
+  
+  
+}
+  
+  );
   
   steam.on('chatStateChange', function(stateChange, chatterActedOn, chat, chatterActedBy) {
     var name = steam.users[chatterActedOn].playerName + ' (http://steamcommunity.com/profiles/' + chatterActedOn + ')';
