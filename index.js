@@ -172,12 +172,28 @@ module.exports = function(details) {
   
   else if(parts[0] == '.weather') {
 	var request = require('request');
+	var city = 'vancouver';
 	
-	if(parts[1] == '' || parts[1] == null) {
-		steam.sendMessage(chatRoom, "Invalid city/country specified!");
+	//if(parts[1] == null || parts[1] == ""
+	//|| parts[2] == null || parts[2] == "" ) {
+	//	steam.sendMessage(chatRoom, "Invalid location.");
+	//	return
+	//}
+	
+	if(parts[1] == 'help') {
+		var out = "Usage: .weather <city>"
+		steam.sendMessage(chatRoom, out);
 		return
 	}
-	var city = parts[1];
+	if(parts[2] != null) {
+		city = parts[1] + "%20" + parts[2];
+	}
+	else {
+		city = parts[1];
+	}
+	console.log(parts[0])
+	console.log(parts[1])
+	console.log(parts[2])
 	
 	var options = {
     url: 'http://api.openweathermap.org/data/2.5/weather?q=' + city,
@@ -189,6 +205,13 @@ module.exports = function(details) {
 	function callback(error, response, body) {
     if (!error && response.statusCode == 200) {
         var info = JSON.parse(body);
+		
+		if(info.message == "Error: Not found city") {
+			steam.sendMessage(chatRoom, "City not found");
+			return
+		}
+		
+		
 		var name = info.name;
 		var country = info.sys.country;
 		var temp = Number(info.main.temp) - 273.15;
@@ -196,9 +219,11 @@ module.exports = function(details) {
 		var rhumidity = info.main.humidity + "%";
 		var pressure = info.main.pressure + "hPa";
 		var condition = info.weather[0].description;
-    
-		var out = "Weather for "+name+", "+country+"\r\n" + "Temperature: " + temp_f+"\r\n" + condition + "\r\n" + "Rel. Humidity: "+rhumidity;
+		var out = "Weather for "+name+", "+country+"\r\n" + "Temperature: " + temp_f+" | " + condition + "\r\n" + "Rel. Humidity: "+rhumidity;
 		steam.sendMessage(chatRoom, out);
+	}
+	else {
+		steam.sendMessage(chatRoom, "Invalid city/country specified!");
 	}
 }
 
