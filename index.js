@@ -157,82 +157,140 @@ module.exports = function(details) {
   }
   
   else if(parts[0] == '.yallah') {
-	  steam.sendMessage(chatRoom, 'YALLAH HABIBI');
+	var random = Math.floor(Math.random()*2) // 0 or 1
+	if(random == 0) {
+		steam.sendMessage(chatRoom, 'YALLAH HABIBI');
+	}
+	else {
+		steam.sendMessage(chatRoom, '░▒▓ YALLAH HABIBI ▓▒░');
+	}
   }
+  
+  // Wikipedia search
+	else if(parts[0] == '.wiki') {
+		if(parts[1] != "" && parts[1] != null) {
+			if(parts[1] == 'help') {
+				var out = "Usage: .wiki <search term>"
+				steam.sendMessage(chatRoom, out);
+				return
+			}
+		
+			var url = 'http://en.wikipedia.org/wiki/'+parts[1];
+			
+				for(var i = 2; i < 20; i++) {
+					if(parts[i] == "" || parts[i] == null) {
+						break
+					}
+					url += "%20";
+					url += parts[i];
+				}
+			
+			}
+			steam.sendMessage(chatRoom, url);
+	}
+
+
+	// Youtube search
+	else if(parts[0] == '.yt') {
+		if(parts[1] != "" && parts[1] != null) {
+			if(parts[1] == 'help') {
+				var out = "Usage: .yt <search term>"
+				steam.sendMessage(chatRoom, out);
+				return
+			}
+		
+			var url = "http://www.youtube.com/results?search_query=" + parts[1];
+			
+				for(var i = 2; i < 20; i++) {
+					if(parts[i] == "" || parts[i] == null) {
+						break
+					}
+					url += "+";
+					url += parts[i];
+				}
+			
+			}
+			steam.sendMessage(chatRoom, url);
+	}
+
   
   else if(parts[0] == '.dice') {
       var randomnumber=Math.floor(Math.random()*5)+1;
 	  steam.sendMessage(chatRoom, 'Nigga you rolled a '+randomnumber);
+  }
   
+  else if(parts[0] == '.rng') {
+  
+	if(parts[1] != "" && parts[1] != null ) {
+		var randomnumber=Math.floor(Math.random()*Number(parts[1]));
+		steam.sendMessage(chatRoom, '☨ PRAISE RNGESUS ☨ '+randomnumber);
+	}
+	else {
+		var out = "Usage: .rng <max>"
+		steam.sendMessage(chatRoom, out);
+	}
   }
   
   else if(parts[0] == '.dongers') {
 	  steam.sendMessage(chatRoom, 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ');
   }
   
+  else if(parts[0] == '.jdongers') {
+  	  steam.sendMessage(chatRoom, 'ヽ༼ຈل͜ຈ༽ﾉ raise your jaedongers ヽ༼ຈل͜ຈ༽ﾉ');
+  }
+  
   else if(parts[0] == '.weather') {
 	var request = require('request');
-	var city = 'vancouver';
+	var city;
+	if(parts[1] != "" && parts[1] != null) {
 	
-	//if(parts[1] == null || parts[1] == ""
-	//|| parts[2] == null || parts[2] == "" ) {
-	//	steam.sendMessage(chatRoom, "Invalid location.");
-	//	return
-	//}
-	
-	if(parts[1] == 'help') {
-		var out = "Usage: .weather <city>"
-		steam.sendMessage(chatRoom, out);
-		return
-	}
-	if(parts[2] != null) {
-		city = parts[1] + "%20" + parts[2];
-	}
-	else {
-		city = parts[1];
-	}
-	console.log(parts[0])
-	console.log(parts[1])
-	console.log(parts[2])
-	
-	var options = {
-    url: 'http://api.openweathermap.org/data/2.5/weather?q=' + city,
-    headers: {
-        'User-Agent': 'request'
-    }
-	};
-
-	function callback(error, response, body) {
-    if (!error && response.statusCode == 200) {
-        var info = JSON.parse(body);
-		
-		if(info.message == "Error: Not found city") {
-			steam.sendMessage(chatRoom, "City not found");
+		if(parts[1] == 'help') {
+			var out = "Usage: .weather <city>"
+			steam.sendMessage(chatRoom, out);
 			return
 		}
-		
-		
-		var name = info.name;
-		var country = info.sys.country;
-		var temp = Number(info.main.temp) - 273.15;
-		var temp_f = temp.toFixed(1) + "C";
-		var rhumidity = info.main.humidity + "%";
-		var pressure = info.main.pressure + "hPa";
-		var condition = info.weather[0].description;
-		var out = "Weather for "+name+", "+country+"\r\n" + "Temperature: " + temp_f+" | " + condition + "\r\n" + "Rel. Humidity: "+rhumidity;
-		steam.sendMessage(chatRoom, out);
+	
+		if(parts[2] != null) {
+			city = parts[1] + "%20" + parts[2];
+		}
+		else {
+			city = parts[1];
+		}
 	}
 	else {
-		steam.sendMessage(chatRoom, "Invalid city/country specified!");
+		city = 'vancouver';
 	}
-}
-
-	request(options, callback);
 	
-
-	
+	var options = {
+		url: 'http://api.openweathermap.org/data/2.5/weather?q=' + city,
+		headers: {
+			'User-Agent': 'request'
+		}
+	};
+	function callback(error, response, body) {
+		if (!error && response.statusCode == 200) {
+			var info = JSON.parse(body);
+		
+			if(info.message == "Error: Not found city") {
+				steam.sendMessage(chatRoom, "City not found");
+				return
+			}
+			
+			var name = info.name;
+			var country = info.sys.country;
+			var temp = Number(info.main.temp) - 273.15;
+			var temp_c = temp.toFixed(1) + "°C";
+			var rhumidity = info.main.humidity + "%";
+			var pressure = info.main.pressure + "hPa";
+			var condition = info.weather[0].description;
+			var out = name+", "+country+ " | " + temp_c + " | " + condition + " | " + "Rel. Humidity: "+rhumidity + " | " + pressure;
+			steam.sendMessage(chatRoom, out);
+		}
+		else {
+			steam.sendMessage(chatRoom, "Error getting weather ("+response.statusCode+")");
+		}
+	} request(options, callback);
 }
-  
   
 }
   
