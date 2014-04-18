@@ -212,6 +212,55 @@ module.exports = function(details) {
 			}
 			steam.sendMessage(chatRoom, url);
 	}
+	// IMDB search
+	else if(parts[0] == '.imdb') {
+		if(parts[1] != "" && parts[1] != null) {
+			if(parts[1] == 'help') {
+				var out = "Usage: .imdb <search term>"
+				steam.sendMessage(chatRoom, out);
+				return
+			}
+		
+			var url = "http://www.imdb.com/find?q=" + parts[1];
+			
+				for(var i = 2; i < 20; i++) {
+					if(parts[i] == "" || parts[i] == null) {
+						break
+					}
+					url += "+";
+					url += parts[i];
+				}
+			
+			}
+			url += '&s=all';
+			steam.sendMessage(chatRoom, url);
+	}
+	
+	// google search
+	else if(parts[0] == '.g') {
+		if(parts[1] != "" && parts[1] != null) {
+			if(parts[1] == 'help') {
+				var out = "Usage: .g <search term>"
+				steam.sendMessage(chatRoom, out);
+				return
+			}
+		
+			var url = "	https://www.google.ca/#q=" + parts[1];
+			
+				for(var i = 2; i < 20; i++) {
+					if(parts[i] == "" || parts[i] == null) {
+						break
+					}
+					url += "+";
+					url += parts[i];
+				}
+			
+			}
+			steam.sendMessage(chatRoom, url);
+	}
+
+	
+	
 
   
   else if(parts[0] == '.dice') {
@@ -223,13 +272,16 @@ module.exports = function(details) {
   
 	if(parts[1] != "" && parts[1] != null ) {
 		var randomnumber=Math.floor(Math.random()*Number(parts[1]));
-		steam.sendMessage(chatRoom, '☨ PRAISE RNGESUS ☨ '+randomnumber);
+		steam.sendMessage(chatRoom, '†††††PRAISE RNGESUS††††† '+randomnumber);
 	}
 	else {
 		var out = "Usage: .rng <max>"
 		steam.sendMessage(chatRoom, out);
 	}
   }
+else if(parts[0] == '.scrub') {
+	steam.sendMessage(chatRoom, '(ง ͠° ͟ʖ ͡°)ง This is our town SCRUB (ง ͠° ͟ʖ ͡°)ง (ง •̀_•́)ง Yeah beat it! (ง •̀_•́)ง.');
+}
   
   else if(parts[0] == '.dongers') {
 	  steam.sendMessage(chatRoom, 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ');
@@ -239,7 +291,7 @@ module.exports = function(details) {
   	  steam.sendMessage(chatRoom, 'ヽ༼ຈل͜ຈ༽ﾉ raise your jaedongers ヽ༼ຈل͜ຈ༽ﾉ');
   }
   
-  else if(parts[0] == '.weather') {
+else if(parts[0] == '.weather') {
 	var request = require('request');
 	var city;
 	if(parts[1] != "" && parts[1] != null) {
@@ -291,10 +343,47 @@ module.exports = function(details) {
 		}
 	} request(options, callback);
 }
-  
+
+else if(parts[0] == '.mtgox') {
+	var MtGox = require('mtgox');
+	var gox = new MtGox();
+	gox.market('BTCUSD', function(err, market) {
+    var last = Number(market.last).toFixed(3) +" USD";
+	var high = Number(market.high).toFixed(3) +" USD";
+	var low = Number(market.low).toFixed(3) +" USD";
+	var vol = market.volume;
+	var out = "Last: "+last + " | " + "H: "+high+" | "+"L: "+low+" | "+"Volume: "+vol;
+	steam.sendMessage(chatRoom, out);
+});
 }
-  
-  );
+
+else if(parts[0] == '.halp') {
+
+var halp = ".halp: Show all available commands";
+var mtgox = ".mtgox: Show Mt.Gox price ticker";
+var weather = ".weather <city>: Show the weather for the input city";
+var yallah = ".yallah: YALLAH HABIBI";
+var camel = ".camel: camelcamelcamel";
+var ncix = ".ncix <item>: Search on NCIX for an SKU or item";
+var dice = ".dice: Roll a six sided die";
+var g = ".g <query>: Search google for the inputted query";
+var wiki = ".wiki <query>: Search wikipedia for the inputted query";
+var rng = ".rng <max>: Generate a pseudo-random number from 0 to <max>";
+
+var text = "\n" + halp +
+			"\n" + mtgox + 
+			"\n" + weather +
+			"\n" + yallah +
+			"\n" + camel +
+			//"\n" + ncix +
+			"\n" + dice +
+			"\n" + g +
+			"\n" + wiki +
+			"\n" + rng;
+steam.sendMessage(chatter, "Available commands:"+text);
+}
+
+});
   
   steam.on('chatStateChange', function(stateChange, chatterActedOn, chat, chatterActedBy) {
     var name = steam.users[chatterActedOn].playerName + ' (http://steamcommunity.com/profiles/' + chatterActedOn + ')';
