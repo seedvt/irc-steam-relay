@@ -151,7 +151,36 @@ module.exports = function(details) {
           return nicks[key] + key;
         }).join('\n'));
       });	  
-  } 
+	} 
+
+	else if (message.match(/^http:./) || message.match(/^https:./) ) {
+		var http = require('http');
+		
+		if(message.match(/^https:./) ) {
+			http = require('https');
+		}
+		
+		
+		var re = /(<\s*title[^>]*>(.+?)<\s*\/\s*title)>/g;
+		http.get(message, function (response) {
+			response.on('data', function (chunk) {
+			var str=chunk.toString();
+			var match = re.exec(str);
+			if (match && match[2]) {
+				steam.sendMessage(chatRoom, 'Title: '+ match[2]);
+			}
+			});    
+		});
+	}
+	
+	else if( message.match(/([^ .][^ ]*\.(?:com|ca|org|co\.uk))/) ) {
+		
+		var output = 'http://'+message;
+		steam.sendMessage(chatRoom, output);
+		
+	}
+
+	
   else if(parts[0] == '.camel') {
 	  steam.sendMessage(chatRoom, 'Camel is a spic');
   }
