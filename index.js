@@ -132,8 +132,9 @@ module.exports = function (details) {
 
     // Append "http://" to the beginning of things that look like URLs
     for (var i = 0; i < parts.length; i++) {
-      if( parts[i].match(/^(?!https?:\/\/)(?!www)[^-]([0-9A-Za-z]|-)+\.[A-Za-z]+$/) )
-      steam.sendMessage( chatRoom, 'http://' + parts[i] );
+      if( parts[i].match(/^(?!https?:\/\/)(?!www)[^-]([0-9A-Za-z]|-)+\.[A-Za-z]+$/) ){
+        steam.sendMessage( chatRoom, 'http://' + parts[i] );
+      }
     }
     
     if (parts[0] == '.k' && permissions & Steam.EChatPermission.Kick) {
