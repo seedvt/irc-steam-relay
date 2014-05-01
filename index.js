@@ -132,7 +132,7 @@ module.exports = function (details) {
 
     // Append "http://" to the beginning of things that look like URLs
     for (var i = 0; i < parts.length; i++) {
-      if( parts[i].match(/^(?!https?:\/\/)(?!www)[^-]([0-9A-Za-z]|-)+\.[A-Za-z]+$/) ){
+      if( parts[i].match(/^(?!https?:\/\/)(?!www)[^-]([0-9A-Za-z]|-|\.)+\.(com?|ca|net|org|edu|info|biz|me|gov|io)$/) ){
         steam.sendMessage( chatRoom, 'http://' + parts[i] );
       }
     }
