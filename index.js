@@ -1,5 +1,6 @@
 var Steam = require('steam');
 var fs = require('fs');
+var lastHalpTime = 0; // Use this to keep track of when we last printed the .halp dialog
 
 // if we've saved a server list, use it
 if (fs.existsSync('servers')) {
@@ -422,7 +423,14 @@ module.exports = function (details) {
         sendSteamIRC(out);
       });
     } else if (parts[0] == '.halp') {
-
+      
+      var time = Math.round(+new Date()/1000);
+      if( lastHalpTime + 60 < time ){
+        lastHalpTime = time;
+      }else{
+        return;
+      }
+      
       var halp = ".halp: Show all available commands";
       var mtgox = ".mtgox: Show Mt.Gox price ticker (disabled)";
       var weather = ".weather <city>: Show the weather for the input city";
