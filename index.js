@@ -232,7 +232,7 @@ module.exports = function (details) {
       }
       
       var re = /(<\s*title[^>]*>(.+?)<\s*\/\s*title)>/g;
-      http.get(message, function (response) {
+      var httprequest = http.get(message, function (response) {
         response.on('data', function (chunk) {
           var str = chunk.toString();
           var match = re.exec(str);
@@ -240,8 +240,8 @@ module.exports = function (details) {
             sendSteamIRC('Title: ' + match[2]);
           }
         });
-      });
-
+      } );
+      httprequest.on('error',function err(){sendSteamIRC('u wot m8')});
     } else if (parts[0] == '.camel') {
       sendSteamIRC('Camel is a spic');
     } else if (parts[0] == '.yallah') {
