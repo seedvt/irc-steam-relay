@@ -571,7 +571,42 @@ module.exports = function (details) {
         "\n" + g +
         "\n" + wiki;
       sendSteamIRC("Available commands:" + text);
-    } 
+    } else if (parts[0] == '.nhl') {
+		var request = require('request');
+
+		var today = new Date();
+		var dd = today.getDate();
+		var mm = today.getMonth()+1;
+		var yyyy = today.getFullYear();
+
+		if(dd<10) {
+			dd='0'+dd
+		} 
+
+		if(mm<10) {
+			mm='0'+mm
+		} 
+
+		today = yyyy+'-'+mm+'-'+dd;
+
+		var options = {
+			url: 'http://live.nhle.com/GameData/GCScoreboard/'+today+'.jsonp',
+		};
+			
+		function callback(error, response, body) {
+
+			var scoreboard = JSON.parse(body.replace('loadScoreboard(', '').replace('})', '}'));
+			var output = 'NHL games today: \n';
+			for(var i = 0; i < scoreboard.games.length; i++) {
+				
+				output += scoreboard.games[i].ata + ' ' + scoreboard.games[i].ats + ' '
+							+ scoreboard.games[i].hta + ' ' + scoreboard.games[i].hts + ' / ' 
+							+ scoreboard.games[i].bs + '\n';
+			}
+			sendSteamIRC(output);
+		} request(options, callback);
+
+	}
   }
 
   /***********
