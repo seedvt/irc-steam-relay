@@ -386,9 +386,14 @@ module.exports = function (details) {
       }
     }
 
-    // Print the weather
+// Print the weather
     } else if (parts[0] == '.weather') {
-      var request = require('request');
+
+	var request = require('request');
+
+	var GoogleMapsAPIKey = '';
+	var ForecastIOAPIKey = '';
+
       var city;
       if (parts[1] != "" && parts[1] != null) {
 
@@ -406,37 +411,89 @@ module.exports = function (details) {
       } else {
         city = 'vancouver ca';
       }
+	var GoogleMapsAPIURL = 'https://maps.googleapis.com/maps/api/geocode/json?address='+city+'&key='+GoogleMapsAPIKey;
 
-      var options = {
-        url: 'http://api.openweathermap.org/data/2.5/weather?q=' + city,
-        headers: {
-          'User-Agent': 'request'
-        }
-      };
+    var googleoptions = {
+        url: GoogleMapsAPIURL,
+        headers: { 'User-Agent': 'request' }
+    };
+	
+	// Parse Google Maps API JSON
+	function callback(error, response, body) {
+        var gmaps = JSON.parse(body);
+		
+		if(gmaps.status == "ZERO_RESULTS") {
+			sendSteamIRC("City not found.")
+			return;
+		}
+		
+		var formattedAddress = gmaps.results[0].formatted_address;
+		var latitude = gmaps.results[0].geometry.location.lat;
+		var longitude = gmaps.results[0].geometry.location.lng;
+	
+		var forecastoptions = {
+			url: 'https://api.forecast.io/forecast/'+ForecastIOAPIKey+'/'+latitude+','+longitude,
+		};
+		
+		
+		function callback(error, response, body) {
+			var forecast = JSON.parse(body);
+			var condition = forecast.currently.summary;
+			var pop = forecast.currently.precipProbability;
+			var temperature = forecast.currently.temperature;
+			var humidity = forecast.currently.humidity;
+			var pressure = forecast.currently.pressure;
+			var windspeed = forecast.currently.windSpeed;
+			var moonPhase = forecast.daily.data[0].moonPhase;
+			var moonPhaseStr;
+			
+			/* moonPhase 
+			 * A number representing the fractional part of the lunation number of the given day. 
+			 * This can be thought of as the “percentage complete” of the current lunar month: 
+			 * a value of 0 represents a new moon, 
+			 * a value of 0.25 represents a first quarter moon, 
+			 * a value of 0.5 represents a full moon, 
+			 * and a value of 0.75 represents a last quarter moon. 
+			 * (The ranges in between these represent waxing crescent, waxing gibbous, waning gibbous, and waning crescent moons, respectively.)
+			 */
 
-      function callback(error, response, body) {
-        if (!error && response.statusCode == 200) {
-          var info = JSON.parse(body);
+				if(Number(moonPhase) == 0) {
+					moonPhaseStr = "new moon";
+				}
+				else if (Number(moonPhase) > 0 && Number(moonPhase) < 0.25) {
+					moonPhaseStr = "waxing crescent";
+				}
+				else if (Number(moonPhase) == 0.25) {
+					moonPhaseStr = "first quarter moon";
+				}
+				else if (Number(moonPhase) > 0.25 && Number(moonPhase) < 0.5) {
+					moonPhaseStr = "waxing gibbous";
+				}
+				else if (Number(moonPhase) == 0.5) {
+					moonPhaseStr = "full moon";
+				}
+				else if (Number(moonPhase) > 0.5 && Number(moonPhase) < 0.75) {
+					moonPhaseStr = "waning gibbous";
+				}
+				else if (Number(moonPhase) == 0.75) {
+					moonPhaseStr = "last quarter moon";
+				}
+				else {
+					moonPhaseStr = "waning crescent";
+				}
+			output = formattedAddress + ' | ' 
+					+ ((Number(temperature) - 32) * 5.0 / 9.0).toFixed(2)  + '°C | ' 
+					+ condition + ' | precipitation: ' + (Number(pop)*100).toFixed(1) + '% | humidity: ' + (Number(humidity)*100).toFixed(1) 
+					+ '% | pressure: ' + (Number(pressure)).toFixed(0) + 'kPa' 
+					+ ' | wind speed: ' + (Number(windspeed)*1.61).toFixed(2) + 'km/h' 
+					+ ' | moon phase: ' + moonPhaseStr;
 
-          if (info.message == "Error: Not found city") {
-            sendSteamIRC("City not found");
-            return
-          }
-
-          var name = info.name;
-          var country = info.sys.country;
-          var temp = Number(info.main.temp) - 273.15;
-          var temp_c = temp.toFixed(1) + "°C";
-          var rhumidity = info.main.humidity + "%";
-          var pressure = info.main.pressure + "hPa";
-          var condition = info.weather[0].description;
-          var out = name + ", " + country + " | " + temp_c + " | " + condition + " | " + "Rel. Humidity: " + rhumidity + " | " + pressure;
-          sendSteamIRC(out);
-        } else {
-          sendSteamIRC("Error getting weather (" + response.statusCode + ")");
-        }
-      }
-      request(options, callback);
+			console.log(output);
+			sendSteamIRC(output);		
+					
+		}  request(forecastoptions, callback); 
+			
+	}  request(googleoptions, callback);
     } else if (parts[0] == '.andrew' || parts[0] == '.asharp'){
       sendSteamIRC('Andrew is a nigger');
     }else if (parts[0] == '.justin' || parts[0] == '.perijah' || parts [0] == '.peri' ){
