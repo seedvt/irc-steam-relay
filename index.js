@@ -185,7 +185,6 @@ module.exports = function (details) {
         }).join('\n'));
       });
     }
-
     doBotThings(message);
   });
 
@@ -236,14 +235,15 @@ module.exports = function (details) {
     var parts = message.split(/\s+/);
 
     // Append "http://" to the beginning of things that look like URLs
-    if( parts[0] != '.fezz' ){
+    /*
+	if( parts[0] != '.fezz' ){
       for (var i = 0; i < parts.length; i++) {
         if( parts[i].match(/^(?!https?:\/\/)(?!www)[0-9A-Za-z]([0-9A-Za-z]|-|\.)+\.(com?|ca|net|org|edu|info|biz|me|gov|io)$/i) ){
           sendSteamIRC( 'http://' + parts[i] );
         }
       }
     }
-
+	*/
     // Fetch the title for a URL
     if ( parts[0].match(/^https?:./) ) {
       var http = require('http');
@@ -283,6 +283,8 @@ module.exports = function (details) {
           });
         } );
         httprequest.on('error',function err(){sendSteamIRC('u wot m8')});
+    }
+      
     }
 
     // Wikipedia search
@@ -384,9 +386,15 @@ module.exports = function (details) {
         }
         sendSteamIRC(url);
       }
-    }
+    } else if (parts[0] == '.calc') {
+      try {
+        var out = eval(message.substring(5))
+        out = out.toString();
+      } catch (e) {
+        var out = 'u wot m8';
+      }
 
-// Print the weather
+      sendSteamIRC( out );
     } else if (parts[0] == '.weather') {
 
 	var request = require('request');
@@ -419,7 +427,7 @@ module.exports = function (details) {
     };
 	
 	// Parse Google Maps API JSON
-	function callback(error, response, body) {
+	function gmapcallback(error, response, body) {
         var gmaps = JSON.parse(body);
 		
 		if(gmaps.status == "ZERO_RESULTS") {
@@ -436,7 +444,7 @@ module.exports = function (details) {
 		};
 		
 		
-		function callback(error, response, body) {
+		function forecastcallback(error, response, body) {
 			var forecast = JSON.parse(body);
 			var condition = forecast.currently.summary;
 			var pop = forecast.currently.precipProbability;
@@ -491,22 +499,11 @@ module.exports = function (details) {
 			console.log(output);
 			sendSteamIRC(output);		
 					
-		}  request(forecastoptions, callback); 
+		}  request(forecastoptions, forecastcallback); 
 			
-	}  request(googleoptions, callback);
-    } else if (parts[0] == '.andrew' || parts[0] == '.asharp'){
-      sendSteamIRC('Andrew is a nigger');
-    }else if (parts[0] == '.justin' || parts[0] == '.perijah' || parts [0] == '.peri' ){
-      if( Math.random() < .075 ){
-        sendSteamIRC('http://www.videosexart.com/play/129344/Brunette-masturbates');
-        var sleep = require('sleep');
-        sleep.sleep(5/2.5) //sleep for 2 seconds
-        while(queue.length() != 0);
-        exit;
-      } else {
-        sendSteamIRC('Andrew is a nigger');
-      }
-    } else if (parts[0] == '.adamchan' || parts[0] == '.fx' ) {
+	}  request(googleoptions, gmapcallback);
+
+    } else if ( parts[0] == '.fx' ) {
       var dollars;
 
       if( parts[1] )
@@ -543,6 +540,17 @@ module.exports = function (details) {
           });
         });
       });
+    } else if (parts[0] == '.mtgox' && false ) {
+      var MtGox = require('mtgox');
+      var gox = new MtGox();
+      gox.market('BTCUSD', function (err, market) {
+        var last = Number(market.last).toFixed(3) + " USD";
+        var high = Number(market.high).toFixed(3) + " USD";
+        var low = Number(market.low).toFixed(3) + " USD";
+        var vol = market.volume;
+        var out = "Last: " + last + " | " + "H: " + high + " | " + "L: " + low + " | " + "Volume: " + vol;
+        sendSteamIRC(out);
+      });
     } else if( parts[0] == '.starttime' ){
       var now = new Date();
       sendSteamIRC(((now.getTime()-start_time.getTime())/3600000).toFixed(4)  + " hours ago\n" + start_time.toString() );
@@ -560,21 +568,35 @@ module.exports = function (details) {
       }
 
       var halp = ".halp: Show all available commands";
+      var mtgox = ".mtgox: Show Mt.Gox price ticker (disabled)";
       var weather = ".weather <city>: Show the weather for the input city";
+      var yallah = ".yallah: YALLAH HABIBI";
+      var camel = ".camel: camelcamelcamel";
       var ncix = ".ncix <item>: Search on NCIX for an SKU or item";
+      var dice = ".dice: Roll a six sided die";
       var g = ".g <query>: Search google for the inputted query";
       var wiki = ".wiki <query>: Search wikipedia for the inputted query";
+      var rng = ".rng <max>: Generate a pseudo-random number from 0 to <max>";
+	  var imdb = ".imdb <title>: Search for a movie/tv in the internet movie database";
 
       var text = "\n" + halp +
         "\n" + mtgox +
         "\n" + weather +
+        // "\n" + yallah +
+        // "\n" + camel +
+        //"\n" + ncix +
+        "\n" + dice +
         "\n" + g +
-        "\n" + wiki;
+        "\n" + wiki +
+        "\n" + rng;
       sendSteamIRC("Available commands:" + text);
     } else if (parts[0] == '.nhl') {
 		var request = require('request');
-
 		var today = new Date();
+		
+		// Offset GMT bug on VPS
+		//today.setHours(today.getHours() - 8);
+		
 		var dd = today.getDate();
 		var mm = today.getMonth()+1;
 		var yyyy = today.getFullYear();
@@ -593,9 +615,10 @@ module.exports = function (details) {
 			url: 'http://live.nhle.com/GameData/GCScoreboard/'+today+'.jsonp',
 		};
 			
-		function callback(error, response, body) {
+		function nhlcallback(error, response, body) {
 
 			var scoreboard = JSON.parse(body.replace('loadScoreboard(', '').replace('})', '}'));
+			
 			var output = 'NHL games today: \n';
 			for(var i = 0; i < scoreboard.games.length; i++) {
 				
@@ -603,10 +626,12 @@ module.exports = function (details) {
 							+ scoreboard.games[i].hta + ' ' + scoreboard.games[i].hts + ' / ' 
 							+ scoreboard.games[i].bs + '\n';
 			}
+			
 			sendSteamIRC(output);
-		} request(options, callback);
-
-	}
+			
+		} request(options, nhlcallback);
+	} 
+	
   }
 
   /***********
@@ -694,7 +719,7 @@ module.exports = function (details) {
       /^The.?Simpsons.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Walking.?Dead.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Voice.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
-      /^Top.?Gear.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+      /^Top.?Gear.?(?:S\d\dE\d\d|\d\d.\d\d).*(PDTV|HDTV).*/i,
       /^Two.?and.?a.?Half.?Men.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /.*-(RELOADED|SKIDROW|CODEX|TPTB|DEFA|VITALITY|HATRED|FLT|FAIRLIGHT|Razor1911|DAGGER|JFKPC|DEViANCE|PROPHET|BAT|DOGE|FASiSO|TiNYiSO|POSTMORTEM|HI2U|SANTA|iNLAWS|FANiSO)$/i ];
     var reject = [ /XXX/i, /S\d\dE\d\d.*(?:DVD|BluRay|FRENCH|SPANISH|GERMAN|ITALIAN|DUTCH|DUBBED|SUBBED|PL|POLISH|NL).*-.*/i, /^Formula.?1.*(?:SWEDISH|NORWEGIAN|SPANISH|DANISH|FRENCH|POLISH).*/i ];
@@ -727,7 +752,7 @@ module.exports = function (details) {
       if( matchInArray(parts[3],accept) && ! matchInArray(parts[3],reject) ){
         pre.push(parts[3]);
         sendSteamIRC( '['+parts[1]+'] ' + (parts[3]).replace(/\[\d\d/,'[') );
-      }else if( parts[2] == 'XXX' && Math.random() < .01 ){
+      }else if( parts[2] == 'XXX' && Math.random() < 0 ){
         sendSteamIRC( '['+parts[1]+'] ' + (parts[3]).replace(/\[\d\d/,'[') );
       }
     }
