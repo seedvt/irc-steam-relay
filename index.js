@@ -246,46 +246,46 @@ module.exports = function (details) {
 	*/
     // Fetch the title for a URL
     if ( parts[0].match(/^https?:./) ) {
-      var http = require('http');
-
-      if (parts[0].match(/^https:./)) {
-        http = require('https');
-      }
+		var http = require('http');
+		
+		if (parts[0].match(/^https:./)) {
+			http = require('https');
+		}
       
-      if( parts[0].match(/^https?:\/\/twitter\.com/ ) ){
-      
-        var re = /<p class="js-tweet-text tweet-text">(.*?)<\/p>/;
-        var httprequest = http.get(parts[0], function (response) {
-          response.on('data', function (chunk) {
-            var str = chunk.toString();
-            var match = re.exec(str);
-            if (match) {
-              console.log( "Twitter: " + match[1].replace(/<.*?>/gi, "").decodeHTML() );
-              return;
-            }
-          });
-        } );
-        httprequest.on('error',function err(){sendSteamIRC('u wot m8')});
-      
-      } else {
-      
-        var re = /(<\s*title[^>]*>(.+?)<\s*\/\s*title)>/ig;
-        var httprequest = http.get(parts[0], function (response) {
-          response.on('data', function (chunk) {
-            var str = chunk.toString();
-            var match = re.exec(str);
-            if (match && match[2]) {
-              if( match[2].length > 93 )
-                sendSteamIRC('Title: ' + (match[2].substring(0,90)).decodeHTML().trim() + '...');
-              else
-                sendSteamIRC('Title: ' + match[2].decodeHTML() );
-            }
-          });
-        } );
-        httprequest.on('error',function err(){sendSteamIRC('u wot m8')});
-    }
-      
-    }
+		if( parts[0].match(/^https?:\/\/twitter\.com/ ) ){
+		  
+			var re = /<p class="js-tweet-text tweet-text">(.*?)<\/p>/;
+			var httprequest = http.get(parts[0], function (response) {
+				response.on('data', function (chunk) {
+					var str = chunk.toString();
+					var match = re.exec(str);
+					if (match) {
+						console.log( "Twitter: " + match[1].replace(/<.*?>/gi, "").decodeHTML() );
+						return;
+					}
+				});
+			});
+			httprequest.on('error',function err(){sendSteamIRC('Error')});
+			
+		} else {
+		
+			var re = /(<\s*title[^>]*>(.+?)<\s*\/\s*title)>/ig;
+			var httprequest = http.get(parts[0], function (response) {
+			  response.on('data', function (chunk) {
+				var str = chunk.toString();
+				var match = re.exec(str);
+				if (match && match[2]) {
+				  if( match[2].length > 93 )
+					sendSteamIRC('Title: ' + (match[2].substring(0,90)).decodeHTML().trim() + '...');
+				  else
+					sendSteamIRC('Title: ' + match[2].decodeHTML() );
+				}
+			  });
+			});
+			httprequest.on('error',function err(){sendSteamIRC('Error')});
+		}
+	
+	}
 
     // Wikipedia search
     else if (parts[0] == '.wiki') {
@@ -329,6 +329,7 @@ module.exports = function (details) {
       }
       sendSteamIRC(url);
     }
+	
     // IMDB search
     else if (parts[0] == '.imdb') {
       if (parts[1] != "" && parts[1] != null) {
@@ -351,7 +352,8 @@ module.exports = function (details) {
         sendSteamIRC(url);
       }
 
-    } else if (parts[0] == '.fezz' || parts[0] == '.fez') {
+    } 
+	else if (parts[0] == '.fezz' || parts[0] == '.fez') {
       var http = require('http');
       if( ! parts[1] )
         return;
@@ -364,10 +366,11 @@ module.exports = function (details) {
           sendSteamIRC(str);
         });
       } );
-      httprequest.on('error',function err(){sendSteamIRC('u wot m8')});
+      httprequest.on('error',function err(){sendSteamIRC('Error')});
 
-    // Google search
-    } else if (parts[0] == '.g') {
+    } 
+	// Google search
+	else if (parts[0] == '.g') {
       if( parts[1] != "" && parts[1] != null ){
         if (parts[1] == 'help') {
           var out = "Usage: .g <search term>"
@@ -386,124 +389,129 @@ module.exports = function (details) {
         }
         sendSteamIRC(url);
       }
-    } else if (parts[0] == '.calc') {
+    } 
+	else if (parts[0] == '.calc') {
       try {
         var out = eval(message.substring(5))
         out = out.toString();
       } catch (e) {
-        var out = 'u wot m8';
+        var out = 'Error';
       }
 
       sendSteamIRC( out );
-    } else if (parts[0] == '.weather') {
-
-	var request = require('request');
-
-	var GoogleMapsAPIKey = '';
-	var ForecastIOAPIKey = '';
-
-      var city;
-      if (parts[1] != "" && parts[1] != null) {
-
-        if (parts[1] == 'help') {
-          var out = "Usage: .weather <city>"
-          sendSteamIRC(out);
-          return
-        }
-
-        if (parts[2] != null) {
-          city = parts[1] + "%20" + parts[2];
-        } else {
-          city = parts[1];
-        }
-      } else {
-        city = 'vancouver ca';
-      }
-	var GoogleMapsAPIURL = 'https://maps.googleapis.com/maps/api/geocode/json?address='+city+'&key='+GoogleMapsAPIKey;
-
-    var googleoptions = {
-        url: GoogleMapsAPIURL,
-        headers: { 'User-Agent': 'request' }
-    };
+    }
 	
-	// Parse Google Maps API JSON
-	function gmapcallback(error, response, body) {
-        var gmaps = JSON.parse(body);
-		
-		if(gmaps.status == "ZERO_RESULTS") {
-			sendSteamIRC("City not found.")
-			return;
-		}
-		
-		var formattedAddress = gmaps.results[0].formatted_address;
-		var latitude = gmaps.results[0].geometry.location.lat;
-		var longitude = gmaps.results[0].geometry.location.lng;
-	
-		var forecastoptions = {
-			url: 'https://api.forecast.io/forecast/'+ForecastIOAPIKey+'/'+latitude+','+longitude,
+	// Print the weather
+	else if (parts[0] == '.weather') {
+
+		var request = require('request');
+
+		var GoogleMapsAPIKey = '';
+		var ForecastIOAPIKey = '';
+
+		  var city;
+		  if (parts[1] != "" && parts[1] != null) {
+
+			if (parts[1] == 'help') {
+			  var out = "Usage: .weather <city>"
+			  sendSteamIRC(out);
+			  return
+			}
+
+			if (parts[2] != null) {
+			  city = parts[1] + "%20" + parts[2];
+			} else {
+			  city = parts[1];
+			}
+		  } else {
+			city = 'vancouver ca';
+		  }
+		var GoogleMapsAPIURL = 'https://maps.googleapis.com/maps/api/geocode/json?address='+city+'&key='+GoogleMapsAPIKey;
+
+		var googleoptions = {
+			url: GoogleMapsAPIURL,
+			headers: { 'User-Agent': 'request' }
 		};
 		
+		// Parse Google Maps API JSON
+		function gmapcallback(error, response, body) {
+			var gmaps = JSON.parse(body);
+			
+			if(gmaps.status == "ZERO_RESULTS") {
+				sendSteamIRC("City not found.")
+				return;
+			}
+			
+			var formattedAddress = gmaps.results[0].formatted_address;
+			var latitude = gmaps.results[0].geometry.location.lat;
+			var longitude = gmaps.results[0].geometry.location.lng;
 		
-		function forecastcallback(error, response, body) {
-			var forecast = JSON.parse(body);
-			var condition = forecast.currently.summary;
-			var pop = forecast.currently.precipProbability;
-			var temperature = forecast.currently.temperature;
-			var humidity = forecast.currently.humidity;
-			var pressure = forecast.currently.pressure;
-			var windspeed = forecast.currently.windSpeed;
-			var moonPhase = forecast.daily.data[0].moonPhase;
-			var moonPhaseStr;
+			var forecastoptions = {
+				url: 'https://api.forecast.io/forecast/'+ForecastIOAPIKey+'/'+latitude+','+longitude,
+			};
 			
-			/* moonPhase 
-			 * A number representing the fractional part of the lunation number of the given day. 
-			 * This can be thought of as the “percentage complete” of the current lunar month: 
-			 * a value of 0 represents a new moon, 
-			 * a value of 0.25 represents a first quarter moon, 
-			 * a value of 0.5 represents a full moon, 
-			 * and a value of 0.75 represents a last quarter moon. 
-			 * (The ranges in between these represent waxing crescent, waxing gibbous, waning gibbous, and waning crescent moons, respectively.)
-			 */
-
-				if(Number(moonPhase) == 0) {
-					moonPhaseStr = "new moon";
-				}
-				else if (Number(moonPhase) > 0 && Number(moonPhase) < 0.25) {
-					moonPhaseStr = "waxing crescent";
-				}
-				else if (Number(moonPhase) == 0.25) {
-					moonPhaseStr = "first quarter moon";
-				}
-				else if (Number(moonPhase) > 0.25 && Number(moonPhase) < 0.5) {
-					moonPhaseStr = "waxing gibbous";
-				}
-				else if (Number(moonPhase) == 0.5) {
-					moonPhaseStr = "full moon";
-				}
-				else if (Number(moonPhase) > 0.5 && Number(moonPhase) < 0.75) {
-					moonPhaseStr = "waning gibbous";
-				}
-				else if (Number(moonPhase) == 0.75) {
-					moonPhaseStr = "last quarter moon";
-				}
-				else {
-					moonPhaseStr = "waning crescent";
-				}
-			output = formattedAddress + ' | ' 
-					+ ((Number(temperature) - 32) * 5.0 / 9.0).toFixed(2)  + '°C | ' 
-					+ condition + ' | precipitation: ' + (Number(pop)*100).toFixed(1) + '% | humidity: ' + (Number(humidity)*100).toFixed(1) 
-					+ '% | pressure: ' + (Number(pressure)).toFixed(0) + 'kPa' 
-					+ ' | wind speed: ' + (Number(windspeed)*1.61).toFixed(2) + 'km/h' 
-					+ ' | moon phase: ' + moonPhaseStr;
-
-			console.log(output);
-			sendSteamIRC(output);		
-					
-		}  request(forecastoptions, forecastcallback); 
 			
-	}  request(googleoptions, gmapcallback);
+			function forecastcallback(error, response, body) {
+				var forecast = JSON.parse(body);
+				var condition = forecast.currently.summary;
+				var pop = forecast.currently.precipProbability;
+				var temperature = forecast.currently.temperature;
+				var humidity = forecast.currently.humidity;
+				var pressure = forecast.currently.pressure;
+				var windspeed = forecast.currently.windSpeed;
+				var moonPhase = forecast.daily.data[0].moonPhase;
+				var moonPhaseStr;
+				
+				/* moonPhase 
+				 * A number representing the fractional part of the lunation number of the given day. 
+				 * This can be thought of as the “percentage complete” of the current lunar month: 
+				 * a value of 0 represents a new moon, 
+				 * a value of 0.25 represents a first quarter moon, 
+				 * a value of 0.5 represents a full moon, 
+				 * and a value of 0.75 represents a last quarter moon. 
+				 * (The ranges in between these represent waxing crescent, waxing gibbous, waning gibbous, and waning crescent moons, respectively.)
+				 */
 
-    } else if ( parts[0] == '.fx' ) {
+					if(Number(moonPhase) == 0) {
+						moonPhaseStr = "new moon";
+					}
+					else if (Number(moonPhase) > 0 && Number(moonPhase) < 0.25) {
+						moonPhaseStr = "waxing crescent";
+					}
+					else if (Number(moonPhase) == 0.25) {
+						moonPhaseStr = "first quarter moon";
+					}
+					else if (Number(moonPhase) > 0.25 && Number(moonPhase) < 0.5) {
+						moonPhaseStr = "waxing gibbous";
+					}
+					else if (Number(moonPhase) == 0.5) {
+						moonPhaseStr = "full moon";
+					}
+					else if (Number(moonPhase) > 0.5 && Number(moonPhase) < 0.75) {
+						moonPhaseStr = "waning gibbous";
+					}
+					else if (Number(moonPhase) == 0.75) {
+						moonPhaseStr = "last quarter moon";
+					}
+					else {
+						moonPhaseStr = "waning crescent";
+					}
+				output = formattedAddress + ' | ' 
+						+ ((Number(temperature) - 32) * 5.0 / 9.0).toFixed(2)  + '°C | ' 
+						+ condition + ' | precipitation: ' + (Number(pop)*100).toFixed(1) + '% | humidity: ' + (Number(humidity)*100).toFixed(1) 
+						+ '% | pressure: ' + (Number(pressure)).toFixed(0) + 'kPa' 
+						+ ' | wind speed: ' + (Number(windspeed)*1.61).toFixed(2) + 'km/h' 
+						+ ' | moon phase: ' + moonPhaseStr;
+
+				console.log(output);
+				sendSteamIRC(output);		
+						
+			}  request(forecastoptions, forecastcallback); 
+				
+		}  request(googleoptions, gmapcallback);
+
+    } 
+	else if ( parts[0] == '.fx' ) {
       var dollars;
 
       if( parts[1] )
@@ -540,7 +548,9 @@ module.exports = function (details) {
           });
         });
       });
-    } else if (parts[0] == '.mtgox' && false ) {
+    } 
+	
+	/* else if (parts[0] == '.mtgox' && false ) {
       var MtGox = require('mtgox');
       var gox = new MtGox();
       gox.market('BTCUSD', function (err, market) {
@@ -551,51 +561,40 @@ module.exports = function (details) {
         var out = "Last: " + last + " | " + "H: " + high + " | " + "L: " + low + " | " + "Volume: " + vol;
         sendSteamIRC(out);
       });
-    } else if( parts[0] == '.starttime' ){
+    } */
+	else if( parts[0] == '.starttime' ){
       var now = new Date();
       sendSteamIRC(((now.getTime()-start_time.getTime())/3600000).toFixed(4)  + " hours ago\n" + start_time.toString() );
-
-    } else if( parts[0] == '.utc' ){
+    } 
+	else if( parts[0] == '.utc' ){
       var now = new Date();
       sendSteamIRC( now.toUTCString() );
-    }else if (parts[0] == '.halp') {
+    } 
+	else if (parts[0] == '.halp') {
 
       var time = Math.round(+new Date()/1000);
-      if( lastHalpTime + 60 < time ){
-        lastHalpTime = time;
-      }else{
-        return;
-      }
+      if( lastHalpTime + 60 < time ) {
+		lastHalpTime = time;
+      } else return;
+      
 
-      var halp = ".halp: Show all available commands";
-      var mtgox = ".mtgox: Show Mt.Gox price ticker (disabled)";
-      var weather = ".weather <city>: Show the weather for the input city";
-      var yallah = ".yallah: YALLAH HABIBI";
-      var camel = ".camel: camelcamelcamel";
-      var ncix = ".ncix <item>: Search on NCIX for an SKU or item";
-      var dice = ".dice: Roll a six sided die";
-      var g = ".g <query>: Search google for the inputted query";
-      var wiki = ".wiki <query>: Search wikipedia for the inputted query";
-      var rng = ".rng <max>: Generate a pseudo-random number from 0 to <max>";
-	  var imdb = ".imdb <title>: Search for a movie/tv in the internet movie database";
-
-      var text = "\n" + halp +
-        "\n" + mtgox +
-        "\n" + weather +
-        // "\n" + yallah +
-        // "\n" + camel +
-        //"\n" + ncix +
-        "\n" + dice +
-        "\n" + g +
-        "\n" + wiki +
-        "\n" + rng;
-      sendSteamIRC("Available commands:" + text);
-    } else if (parts[0] == '.nhl') {
+      var halp = ".halp: Show all available commands\n";
+      var weather = ".weather <city>: Show the weather for the input city\n";
+      var g = ".g <query>: Search google for the inputted query\n";
+      var wiki = ".wiki <query>: Search wikipedia for the inputted query\n";
+	  var imdb = ".imdb <title>: Search for a movie/tv in the internet movie database\n";
+	  var yt = ".yt <query>: Search for a youtube video with the inputted query\n";
+	  var nhl = ".nhl: Shows today's NHL score board\n";
+		
+      sendSteamIRC("Available commands:\n" + halp + weather + g + wiki + imdb + yt + nhl);
+	  
+    } 
+	else if (parts[0] == '.nhl') {
 		var request = require('request');
 		var today = new Date();
 		
 		// Offset GMT bug on VPS
-		//today.setHours(today.getHours() - 8);
+		today.setHours(today.getHours() - 8);
 		
 		var dd = today.getDate();
 		var mm = today.getMonth()+1;
@@ -634,7 +633,7 @@ module.exports = function (details) {
 	
   }
 
-  /***********
+/***********
    PREBOT
    ************/
 
@@ -680,6 +679,7 @@ module.exports = function (details) {
       /^Dragon.?s.?Den.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Family.?Guy.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Game.?of.?Thrones.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+	  /^Gotham.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Girls.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Glee.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Gordon.?Ramsay.*S\d\dE\d\d.*(PDTV|HDTV).*/i,
@@ -702,6 +702,7 @@ module.exports = function (details) {
       /^Parenthood.*S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Parks.?and.?Recreation.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Pretty.?Little.?Liars.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+	  /^Restaurant.?Impossible.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Richard.?Hammond.*S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Rookie.?Blue.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Silicon.?Valley.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
@@ -712,6 +713,7 @@ module.exports = function (details) {
       /^Suits.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Amazing.?Race.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Americans.*S\d\dE\d\d.*(PDTV|HDTV).*/i,
+	  /^The.?Flash.?\d\d\d\d.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Big.?Bang.?Theory.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Good.?Wife.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Office.*S\d\dE\d\d.*(PDTV|HDTV).*/i,
@@ -719,8 +721,11 @@ module.exports = function (details) {
       /^The.?Simpsons.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Walking.?Dead.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^The.?Voice.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+      /^Top.?Chef.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /^Top.?Gear.?(?:S\d\dE\d\d|\d\d.\d\d).*(PDTV|HDTV).*/i,
       /^Two.?and.?a.?Half.?Men.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+      /^Undercover.?Boss.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
+	  /^Wizard.?Wars.?S\d\dE\d\d.*(PDTV|HDTV).*/i,
       /.*-(RELOADED|SKIDROW|CODEX|TPTB|DEFA|VITALITY|HATRED|FLT|FAIRLIGHT|Razor1911|DAGGER|JFKPC|DEViANCE|PROPHET|BAT|DOGE|FASiSO|TiNYiSO|POSTMORTEM|HI2U|SANTA|iNLAWS|FANiSO)$/i ];
     var reject = [ /XXX/i, /S\d\dE\d\d.*(?:DVD|BluRay|FRENCH|SPANISH|GERMAN|ITALIAN|DUTCH|DUBBED|SUBBED|PL|POLISH|NL).*-.*/i, /^Formula.?1.*(?:SWEDISH|NORWEGIAN|SPANISH|DANISH|FRENCH|POLISH).*/i ];
 
