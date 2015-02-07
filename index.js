@@ -269,7 +269,7 @@ module.exports = function (details) {
 			
 		} else {
 		
-			var re = /(<\s*title[^>]*>(.+?)<\s*\/\s*title)>/ig;
+			var re = /(<\s*title[^>]*>\s*(.+?)\s*<\s*\/\s*title)>/ig;
 			var httprequest = http.get(parts[0], function (response) {
 			  response.on('data', function (chunk) {
 				var str = chunk.toString();
