@@ -511,44 +511,77 @@ module.exports = function (details) {
 		}  request(googleoptions, gmapcallback);
 
     } 
-	else if ( parts[0] == '.fx' ) {
-      var dollars;
+    else if ( parts[0] == '.fx' ) {
+    	var dollars;
+    	if( parts[1] ) dollars = Number(parts[1]);
+    	if( isNaN(dollars) ) dollars = 1;
 
-      if( parts[1] )
-        dollars = Number(parts[1]);
-      if( isNaN(dollars) )
-        dollars = 1;
+	// bank of canada xml feed (closing CAD/USD rate)
+	var closing_url = 'http://www.bankofcanada.ca/stats/results//p_xml?rangeType=range&rangeValue=1&lP=lookup_daily_exchange_rates.php&sR=2004-06-26&se=_0102&dF=&dT=';
+	var noon_url = 'http://www.bankofcanada.ca/stats/assets/xml/noon-five-day.xml';
+	var http = require('http');
+    	var util = require('util');
 
-      // bank of canada xml feed (daily CAD/USD rate)
-      var url = 'http://www.bankofcanada.ca/stats/results//p_xml?rangeType=range&rangeValue=1&lP=lookup_daily_exchange_rates.php&sR=2004-06-26&se=_0102&dF=&dT=';
-      var http = require('http');
-      var util = require('util');
-      var req = http.get(url, function(res) {
-        // save the data
-        var xml = '';
-        res.on('data', function(chunk) {
-                xml += chunk;
-        });
-
-        res.on('end', function() {
-          // parse xml
-          var parseString = require('xml2js').parseString;
-          parseString(xml, function(err,result) {
-            var rate = JSON.stringify(result.Currency.Observation[0].Currency_name[0].Observation_data);
-            var date = JSON.stringify(result.Currency.Observation[0].Currency_name[0].Observation_date);
-            rate = rate.replace('["', '');
-            rate = rate.replace('"]', '');
-            date = date.replace('["', '');
-            date = date.replace('"]', '');
-            // out = "USD/CAN closing rate\n" + rate + " CAD = 1 USD\n" + Number(1/rate).toFixed(4) + " USD = 1 CAD\n" + "Last updated: " + date;
-            out = dollars.toFixed(2).toString() + " USD = " + Number(rate*dollars.toFixed(2)).toFixed(4) + " CAD | " + dollars.toFixed(2).toString() + " CAD = " + Number(dollars.toFixed(2)/rate).toFixed(4) + " USD | " + "Last updated: " + date;
-            // out = rate + " CAD = 1 USD | " + Number(1/rate).toFixed(4) + " USD = 1 CAD | " + "Last updated: " + date;
-            sendSteamIRC(out);
-            //console.log(out);
-          });
-        });
-      });
-    } 
+	var noon_date, noon_date_ts, noon_rate;
+	var closing_date, closing_date_ts, closing_rate;
+	var most_recent_rate, most_recent_date;
+	
+	// closing rate
+	var req = http.get(closing_url, function(res) {
+		// save the data
+		var xml = '';
+		res.on('data', function(chunk) {
+			xml += chunk;
+		});
+		res.on('end', function() {
+			// parse xml
+			var parseString = require('xml2js').parseString;
+			parseString(xml, function(err,result) {
+				closing_date_ts = JSON.stringify(result.Currency.Observation[0].Currency_name[0].Observation_date);
+				closing_date_ts = closing_date_ts.replace('["', '').replace('"]', '');
+				closing_rate = JSON.stringify(result.Currency.Observation[0].Currency_name[0].Observation_data);					closing_rate = closing_rate.replace('["', '').replace('"]', '');
+				
+				// noon rate
+				var req = http.get(noon_url, function(res) {
+					// save the data
+					var xml = '';
+					res.on('data', function(chunk) {
+						xml += chunk;
+					});
+					res.on('end', function() {
+					// parse xml
+					var parseString = require('xml2js').parseString;
+					parseString(xml, function(err,result) {
+						noon_date_ts = JSON.stringify(result.Currency.Observation[4].Observation_date);
+						noon_date_ts = noon_date_ts.replace('["', '').replace('"]', '');
+						noon_rate = JSON.stringify(result.Currency.Observation[4].Observation_data);
+						noon_rate = noon_rate.replace('["', '').replace('"]', '');
+			
+						// Determine which rate is newer
+						noon_date = new Date(noon_date_ts);
+						closing_date = new Date(closing_date_ts);
+						if(closing_date >= noon_date) {
+							most_recent_date = closing_date_ts + " (Closing)";
+							most_recent_rate = closing_rate;
+						}
+						else {
+							most_recent_date = noon_date_ts + " (Noon)";
+							most_recent_rate = noon_rate;
+						}
+							
+						sendSteamIRC("Most Recent Rate: "+ dollars.toFixed(2).toString() + " USD = " 
+							+ Number(most_recent_rate*dollars.toFixed(2)).toFixed(4) + " CAD | " 
+							+ dollars.toFixed(2).toString() + " CAD = " 
+							+ Number(dollars.toFixed(2)/most_recent_rate).toFixed(4) 
+							+ " USD | " + "Last updated: " + most_recent_date);
+					});
+				});
+			});
+			
+		});
+	});
+});
+}
 	
 	/* else if (parts[0] == '.mtgox' && false ) {
       var MtGox = require('mtgox');
